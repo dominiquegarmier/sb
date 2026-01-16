@@ -122,7 +122,28 @@ collect_gitignore_patterns() {
     local ignores=()
     local found_gitignore=false
 
-    # Find all .gitignore files
+    # Read global gitignore
+    local global_gitignore
+    global_gitignore="$(git config --global core.excludesFile 2>/dev/null || true)"
+    # Expand ~ if present
+    global_gitignore="${global_gitignore/#\~/$HOME}"
+    if [[ -n "$global_gitignore" && -f "$global_gitignore" ]]; then
+        found_gitignore=true
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+            line="${line%"${line##*[![:space:]]}"}"
+            [[ -z "$line" ]] && continue
+            local negate=""
+            if [[ "$line" =~ ^! ]]; then
+                negate="!"
+                line="${line#!}"
+            fi
+            line="${line#/}"
+            ignores+=("--ignore=${negate}${line}")
+        done < "$global_gitignore"
+    fi
+
+    # Find all .gitignore files in project
     while IFS= read -r -d '' gitignore; do
         found_gitignore=true
         local rel_dir
