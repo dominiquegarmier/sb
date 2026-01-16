@@ -62,14 +62,15 @@ GH_TOKEN="ghp_xxxxxxxxxxxx"
 3. **File sync**: Mutagen syncs files bidirectionally, excluding platform artifacts
 4. **State persists**: Container state (apt packages, etc.) persists across sessions
 
-## Ignored (Platform-Specific)
+## Ignores
 
-These are never synced (each platform has its own):
+Patterns from `.gitignore` files (including nested ones) are automatically used.
+The `.git` directory is always ignored.
 
-- **Python:** .venv, \_\_pycache\_\_, .pytest_cache, .mypy_cache, .ruff_cache
-- **Node:** node_modules
-- **Rust:** target
-- **C/C++:** build, CMakeFiles, *.o, *.a, *.so, *.dylib
+If no `.gitignore` exists, these defaults are used:
+`.venv`, `__pycache__`, `*.pyc`, `node_modules`, `target`, `build`
+
+**Note:** Negation patterns (`!pattern`) are not supported by Mutagen and are skipped.
 
 ## Auth
 

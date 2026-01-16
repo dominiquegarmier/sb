@@ -116,6 +116,57 @@ else
     fi
 fi
 
+# Collect ignore patterns from .gitignore files
+collect_gitignore_patterns() {
+    local ignores=()
+    # Always ignore .git
+    ignores+=("--ignore=.git")
+
+    local found_gitignore=false
+
+    # Find all .gitignore files
+    while IFS= read -r -d '' gitignore; do
+        found_gitignore=true
+        local dir
+        dir="$(dirname "$gitignore")"
+        local prefix=""
+        if [[ "$dir" != "." ]]; then
+            prefix="${dir#./}/"
+        fi
+
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            # Skip empty lines and comments
+            [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+            # Skip negation patterns (mutagen doesn't support them)
+            [[ "$line" =~ ^! ]] && continue
+            # Trim whitespace
+            line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            [[ -z "$line" ]] && continue
+
+            # Add prefix for nested .gitignore files
+            if [[ -n "$prefix" && ! "$line" =~ ^/ ]]; then
+                ignores+=("--ignore=${prefix}${line}")
+            else
+                # Remove leading slash if present (mutagen paths are relative)
+                line="${line#/}"
+                ignores+=("--ignore=${line}")
+            fi
+        done < "$gitignore"
+    done < <(find "$PROJECT_DIR" -name .gitignore -print0 2>/dev/null)
+
+    # Fallback defaults if no .gitignore found
+    if [[ "$found_gitignore" == "false" ]]; then
+        ignores+=("--ignore=.venv")
+        ignores+=("--ignore=__pycache__")
+        ignores+=("--ignore=*.pyc")
+        ignores+=("--ignore=node_modules")
+        ignores+=("--ignore=target")
+        ignores+=("--ignore=build")
+    fi
+
+    printf '%s\n' "${ignores[@]}"
+}
+
 # Check if sync session exists
 SYNC_EXISTS=$(mutagen sync list | grep -q "$SYNC_NAME" && echo "yes" || echo "no")
 
@@ -124,30 +175,19 @@ if [[ "$SYNC_EXISTS" == "yes" ]]; then
     mutagen sync resume "$SYNC_NAME" &>/dev/null || true
 else
     echo "Starting file sync..."
+
+    # Build ignore flags from .gitignore files
+    IGNORE_FLAGS=()
+    while IFS= read -r flag; do
+        [[ -n "$flag" ]] && IGNORE_FLAGS+=("$flag")
+    done < <(collect_gitignore_patterns)
+
     mutagen sync create \
         --name="$SYNC_NAME" \
         --sync-mode=two-way-resolved \
         --default-file-mode=0644 \
         --default-directory-mode=0755 \
-        --ignore=".venv" \
-        --ignore="__pycache__" \
-        --ignore="*.pyc" \
-        --ignore=".pytest_cache" \
-        --ignore=".mypy_cache" \
-        --ignore=".ruff_cache" \
-        --ignore=".tox" \
-        --ignore="*.egg-info" \
-        --ignore=".eggs" \
-        --ignore="node_modules" \
-        --ignore="target" \
-        --ignore="build" \
-        --ignore="CMakeFiles" \
-        --ignore="CMakeCache.txt" \
-        --ignore="*.o" \
-        --ignore="*.a" \
-        --ignore="*.so" \
-        --ignore="*.dylib" \
-        --ignore=".cache" \
+        "${IGNORE_FLAGS[@]}" \
         "$PROJECT_DIR" \
         "docker://${CONTAINER_NAME}/workspace"
 fi
