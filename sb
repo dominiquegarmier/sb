@@ -7,18 +7,17 @@ if [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
 fi
 
-# Parse flags and subcommand
+# Parse flags, remaining args become the command
 EPHEMERAL=false
 FORWARD_DOCKER=false
 REBUILD=false
-SUBCOMMAND=""
+CMD=()
 while [[ $# -gt 0 ]]; do
     case $1 in
         --rm) EPHEMERAL=true; shift ;;
         --forward-docker) FORWARD_DOCKER=true; shift ;;
         --rebuild) REBUILD=true; shift ;;
-        claude|codex) SUBCOMMAND="$1"; shift ;;
-        *) shift ;;
+        *) CMD+=("$1"); shift ;;
     esac
 done
 
@@ -157,14 +156,8 @@ echo "Waiting for sync..."
 mutagen sync flush "$SYNC_NAME"
 
 echo ""
-case "$SUBCOMMAND" in
-    claude)
-        docker exec -it "$CONTAINER_NAME" claude --dangerously-skip-permissions
-        ;;
-    codex)
-        docker exec -it "$CONTAINER_NAME" codex --full-auto
-        ;;
-    *)
-        docker exec -it "$CONTAINER_NAME" /bin/bash
-        ;;
-esac
+if [[ ${#CMD[@]} -eq 0 ]]; then
+    docker exec -it "$CONTAINER_NAME" /bin/bash
+else
+    docker exec -it "$CONTAINER_NAME" "${CMD[@]}"
+fi

@@ -21,9 +21,11 @@ This downloads:
 ## Usage
 
 ```bash
-sb              # bash shell
-sb claude       # claude --dangerously-skip-permissions
-sb codex        # codex --full-auto
+sb                                      # interactive bash shell
+sb [cmd]                                # run command in container
+sb claude --dangerously-skip-permissions
+sb codex --full-auto
+sb python script.py
 ```
 
 ### Flags
@@ -32,7 +34,7 @@ sb codex        # codex --full-auto
 sb --rm                  # ephemeral (remove container on exit)
 sb --forward-docker      # mount docker socket into container
 sb --rebuild             # nuke everything and rebuild image from scratch
-sb --rm claude           # combine flags
+sb --rm python script.py # combine flags with command
 ```
 
 ## Configuration
