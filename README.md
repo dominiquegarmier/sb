@@ -21,20 +21,20 @@ This downloads:
 ## Usage
 
 ```bash
-sb                                      # interactive bash shell
-sb [cmd]                                # run command in container
-sb claude --dangerously-skip-permissions
-sb codex --full-auto
-sb python script.py
+sb                                          # interactive bash shell
+sb -- [cmd]                                 # run command in container
+sb -- claude --dangerously-skip-permissions
+sb -- codex --full-auto
+sb -- python script.py
 ```
 
 ### Flags
 
 ```bash
-sb --rm                  # ephemeral (remove container on exit)
-sb --forward-docker      # mount docker socket into container
-sb --rebuild             # nuke everything and rebuild image from scratch
-sb --rm python script.py # combine flags with command
+sb --rm                      # ephemeral (remove container on exit)
+sb --forward-docker          # mount docker socket into container
+sb --rebuild                 # nuke everything and rebuild image from scratch
+sb --rm -- python script.py  # combine flags with command
 ```
 
 ## Configuration
@@ -69,8 +69,6 @@ The `.git` directory is always ignored.
 
 If no `.gitignore` exists, these defaults are used:
 `.venv`, `__pycache__`, `*.pyc`, `node_modules`, `target`, `build`
-
-**Note:** Negation patterns (`!pattern`) are not supported by Mutagen and are skipped.
 
 ## Auth
 
