@@ -173,9 +173,6 @@ collect_gitignore_patterns() {
         ignores+=("--ignore=build")
     fi
 
-    # Always ignore .git
-    ignores+=("--ignore=.git")
-
     printf '%s\n' "${ignores[@]}"
 }
 

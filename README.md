@@ -65,7 +65,6 @@ GH_TOKEN="ghp_xxxxxxxxxxxx"
 ## Ignores
 
 Patterns from `.gitignore` files (including nested ones) are automatically used.
-The `.git` directory is always ignored.
 
 If no `.gitignore` exists, these defaults are used:
 `.venv`, `__pycache__`, `*.pyc`, `node_modules`, `target`, `build`
