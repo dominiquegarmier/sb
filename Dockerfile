@@ -88,7 +88,7 @@ WORKDIR /work
 
 # Nice shell defaults
 RUN echo 'alias ll="ls -la"' >> /root/.bashrc \
-    && echo 'export PS1="\[\033[1;34m\]ralph\[\033[0m\]:\[\033[1;32m\]\w\[\033[0m\]$ "' >> /root/.bashrc
+    && echo 'export PS1="\[\033[1;34m\]box\[\033[0m\]:\[\033[1;32m\]\w\[\033[0m\]$ "' >> /root/.bashrc
 
 # Default command
 CMD ["/bin/bash"]

@@ -1,4 +1,4 @@
-# ralph
+# box
 
 Containerized dev environment with Claude Code, Codex, and Python venv isolation.
 
@@ -9,37 +9,37 @@ Containerized dev environment with Claude Code, Codex, and Python venv isolation
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dominiquegarmier/ralph/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/dominiquegarmier/box/main/install.sh | bash
 ```
 
 This downloads:
-- `ralph` script to `~/.local/bin/`
-- `Dockerfile` to `~/.config/ralph/`
-- Config template to `~/.config/ralph/config`
+- `box` script to `~/.local/bin/`
+- `Dockerfile` to `~/.config/box/`
+- Config template to `~/.config/box/config`
 
 ## Usage
 
 ```bash
-ralph                                       # interactive bash shell
-ralph -- [cmd]                              # run command in container
-ralph -- claude --dangerously-skip-permissions
-ralph -- codex --full-auto
-ralph -- python script.py
-ralph -- uv sync                            # install deps (venv at /venv/project)
+box                                       # interactive bash shell
+box -- [cmd]                              # run command in container
+box -- claude --dangerously-skip-permissions
+box -- codex --full-auto
+box -- python script.py
+box -- uv sync                            # install deps (venv at /venv/project)
 ```
 
 ### Flags
 
 ```bash
-ralph --rm                      # ephemeral (remove container on exit)
-ralph --forward-docker          # mount docker socket into container
-ralph --rebuild                 # nuke everything and rebuild image from scratch
-ralph --rm -- python script.py  # combine flags with command
+box --rm                      # ephemeral (remove container on exit)
+box --forward-docker          # mount docker socket into container
+box --rebuild                 # nuke everything and rebuild image from scratch
+box --rm -- python script.py  # combine flags with command
 ```
 
 ## Configuration
 
-Edit `~/.config/ralph/config`:
+Edit `~/.config/box/config`:
 
 ```bash
 # GitHub token for gh CLI (recommend read-only PAT)
@@ -57,7 +57,7 @@ GH_TOKEN="ghp_xxxxxxxxxxxx"
 
 ## How It Works
 
-1. **First run**: Builds Docker image locally from `~/.config/ralph/Dockerfile`
+1. **First run**: Builds Docker image locally from `~/.config/box/Dockerfile`
 2. **Per-project**: Creates container keyed by absolute path hash
 3. **File access**: Bind mounts your repo at `/work` (immediate, no sync)
 4. **Python venv**: `UV_PROJECT_ENVIRONMENT=/venv/{project}` keeps venvs in the container (not in repo)
@@ -81,8 +81,8 @@ GH_TOKEN="ghp_xxxxxxxxxxxx"
 Re-run install to get latest Dockerfile, then rebuild:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dominiquegarmier/ralph/main/install.sh | bash
-ralph --rebuild
+curl -fsSL https://raw.githubusercontent.com/dominiquegarmier/box/main/install.sh | bash
+box --rebuild
 ```
 
 **Note:** `--rebuild` deletes all container state (installed packages, image cache).

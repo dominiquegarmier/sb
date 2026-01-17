@@ -1,16 +1,16 @@
 #!/bin/bash
 set -e
 
-REPO_URL="https://raw.githubusercontent.com/dominiquegarmier/ralph/main"
+REPO_URL="https://raw.githubusercontent.com/dominiquegarmier/box/main"
 INSTALL_DIR="${HOME}/.local/bin"
-CONFIG_DIR="${HOME}/.config/ralph"
+CONFIG_DIR="${HOME}/.config/box"
 
 mkdir -p "$INSTALL_DIR" "$CONFIG_DIR"
 
-# Download ralph script
-echo "Downloading ralph..."
-curl -fsSL "$REPO_URL/ralph" -o "$INSTALL_DIR/ralph"
-chmod +x "$INSTALL_DIR/ralph"
+# Download box script
+echo "Downloading box..."
+curl -fsSL "$REPO_URL/box" -o "$INSTALL_DIR/box"
+chmod +x "$INSTALL_DIR/box"
 
 # Download Dockerfile for local builds
 echo "Downloading Dockerfile..."
@@ -20,7 +20,7 @@ curl -fsSL "$REPO_URL/Dockerfile" -o "$CONFIG_DIR/Dockerfile"
 CONFIG_FILE="${CONFIG_DIR}/config"
 if [[ ! -f "$CONFIG_FILE" ]]; then
     cat > "$CONFIG_FILE" << 'EOF'
-# ralph configuration
+# box configuration
 
 # GitHub token for gh CLI (recommend read-only PAT)
 #GH_TOKEN="ghp_xxxxxxxxxxxx"
@@ -39,4 +39,4 @@ if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
     echo ""
 fi
 
-echo "Installed ralph to $INSTALL_DIR/ralph"
+echo "Installed box to $INSTALL_DIR/box"

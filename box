@@ -2,7 +2,7 @@
 set -e
 
 # Load config if exists
-CONFIG_FILE="${HOME}/.config/ralph/config"
+CONFIG_FILE="${HOME}/.config/box/config"
 if [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
 fi
@@ -22,14 +22,14 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-IMAGE_NAME="ralph:latest"
+IMAGE_NAME="box:latest"
 PROJECT_DIR="$(pwd)"
 PROJECT_SLUG="$(basename "$PROJECT_DIR")"
-DOCKERFILE_PATH="${HOME}/.config/ralph/Dockerfile"
+DOCKERFILE_PATH="${HOME}/.config/box/Dockerfile"
 
 # Use hash of absolute path for unique container naming
 PROJECT_HASH="$(echo -n "$PROJECT_DIR" | shasum -a 256 | cut -c1-12)"
-CONTAINER_NAME="ralph-${PROJECT_HASH}"
+CONTAINER_NAME="box-${PROJECT_HASH}"
 
 # Rebuild: remove everything and start fresh
 if [[ "$REBUILD" == "true" ]]; then
