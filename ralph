@@ -1,0 +1,109 @@
+#!/bin/bash
+set -e
+
+# Load config if exists
+CONFIG_FILE="${HOME}/.config/ralph/config"
+if [[ -f "$CONFIG_FILE" ]]; then
+    source "$CONFIG_FILE"
+fi
+
+# Parse flags, everything after -- becomes the command
+EPHEMERAL=false
+FORWARD_DOCKER=false
+REBUILD=false
+CMD=()
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --rm) EPHEMERAL=true; shift ;;
+        --forward-docker) FORWARD_DOCKER=true; shift ;;
+        --rebuild) REBUILD=true; shift ;;
+        --) shift; CMD=("$@"); break ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+done
+
+IMAGE_NAME="ralph:latest"
+PROJECT_DIR="$(pwd)"
+PROJECT_SLUG="$(basename "$PROJECT_DIR")"
+DOCKERFILE_PATH="${HOME}/.config/ralph/Dockerfile"
+
+# Use hash of absolute path for unique container naming
+PROJECT_HASH="$(echo -n "$PROJECT_DIR" | shasum -a 256 | cut -c1-12)"
+CONTAINER_NAME="ralph-${PROJECT_HASH}"
+
+# Rebuild: remove everything and start fresh
+if [[ "$REBUILD" == "true" ]]; then
+    echo "Rebuilding (this will delete all container state)..."
+    docker stop "$CONTAINER_NAME" &>/dev/null || true
+    docker rm "$CONTAINER_NAME" &>/dev/null || true
+    docker rmi "$IMAGE_NAME" &>/dev/null || true
+fi
+
+# Build image if needed
+if [[ -z "$(docker images -q "$IMAGE_NAME" 2>/dev/null)" ]]; then
+    if [[ ! -f "$DOCKERFILE_PATH" ]]; then
+        echo "Error: Dockerfile not found at $DOCKERFILE_PATH"
+        echo "Run the install script again to download it."
+        exit 1
+    fi
+    echo "Building $IMAGE_NAME (may take a few minutes)..."
+    docker build -t "$IMAGE_NAME" -f "$DOCKERFILE_PATH" "$(dirname "$DOCKERFILE_PATH")"
+fi
+
+mkdir -p ~/.claude ~/.codex
+
+# Build docker run args
+DOCKER_ARGS=(
+    -d
+    -w /work
+    -v "$PROJECT_DIR:/work"
+    -v "$HOME/.claude:/root/.claude"
+    -v "$HOME/.codex:/root/.codex"
+    -e "UV_PROJECT_ENVIRONMENT=/venv/$PROJECT_SLUG"
+    -e "GH_TOKEN=${GH_TOKEN:-$GITHUB_TOKEN}"
+)
+if [[ "$FORWARD_DOCKER" == "true" ]]; then
+    DOCKER_ARGS+=(-v /var/run/docker.sock:/var/run/docker.sock)
+fi
+
+# Cleanup on exit
+cleanup() {
+    echo ""
+    if [[ "$EPHEMERAL" == "true" ]]; then
+        echo "Cleaning up..."
+        docker stop "$CONTAINER_NAME" &>/dev/null || true
+        docker rm "$CONTAINER_NAME" &>/dev/null || true
+    else
+        echo "Detaching (container keeps running)..."
+    fi
+}
+trap cleanup EXIT INT TERM
+
+if [[ "$EPHEMERAL" == "true" ]]; then
+    # Ephemeral mode: remove existing and create fresh
+    docker stop "$CONTAINER_NAME" &>/dev/null || true
+    docker rm "$CONTAINER_NAME" &>/dev/null || true
+    echo "Creating ephemeral container..."
+    docker run "${DOCKER_ARGS[@]}" --name "$CONTAINER_NAME" "$IMAGE_NAME" tail -f /dev/null
+else
+    # Persistent mode: reuse existing container
+    CONTAINER_EXISTS=$(docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$" && echo "yes" || echo "no")
+    CONTAINER_RUNNING=$(docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$" && echo "yes" || echo "no")
+
+    if [[ "$CONTAINER_RUNNING" == "yes" ]]; then
+        echo "Container already running..."
+    elif [[ "$CONTAINER_EXISTS" == "yes" ]]; then
+        echo "Starting existing container..."
+        docker start "$CONTAINER_NAME" >/dev/null
+    else
+        echo "Creating new container..."
+        docker run "${DOCKER_ARGS[@]}" --name "$CONTAINER_NAME" "$IMAGE_NAME" tail -f /dev/null
+    fi
+fi
+
+echo ""
+if [[ ${#CMD[@]} -eq 0 ]]; then
+    docker exec -it "$CONTAINER_NAME" /bin/bash
+else
+    docker exec -it "$CONTAINER_NAME" "${CMD[@]}"
+fi
